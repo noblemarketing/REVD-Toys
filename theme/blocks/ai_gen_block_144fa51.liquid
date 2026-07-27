@@ -1,0 +1,245 @@
+{% doc %}
+  @prompt
+    Create a custom font loader block that adds custom font files to the site's head section with options to upload font files and configure font-family names
+
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-font-loader-{{ ai_gen_id }} {
+    display: none;
+  }
+
+  .ai-font-loader-preview-{{ ai_gen_id }} {
+    padding: 30px;
+    background-color: {{ block.settings.preview_background_color }};
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+
+  .ai-font-loader-preview-text-{{ ai_gen_id }} {
+    font-size: {{ block.settings.preview_font_size }}px;
+    line-height: 1.4;
+    color: {{ block.settings.preview_text_color }};
+    margin: 0;
+  }
+
+  {% if block.settings.font_file_woff2 != blank or block.settings.font_file_woff != blank or block.settings.font_file_ttf != blank %}
+    @font-face {
+      font-family: '{{ block.settings.font_family_name }}';
+      font-style: {{ block.settings.font_style }};
+      font-weight: {{ block.settings.font_weight }};
+      font-display: {{ block.settings.font_display }};
+      src: 
+        {% if block.settings.font_file_woff2 != blank %}
+          url('{{ block.settings.font_file_woff2 | file_url }}') format('woff2'){% if block.settings.font_file_woff != blank or block.settings.font_file_ttf != blank %},{% endif %}
+        {% endif %}
+        {% if block.settings.font_file_woff != blank %}
+          url('{{ block.settings.font_file_woff | file_url }}') format('woff'){% if block.settings.font_file_ttf != blank %},{% endif %}
+        {% endif %}
+        {% if block.settings.font_file_ttf != blank %}
+          url('{{ block.settings.font_file_ttf | file_url }}') format('truetype')
+        {% endif %};
+    }
+
+    .ai-font-loader-preview-text-{{ ai_gen_id }} {
+      font-family: '{{ block.settings.font_family_name }}', {{ block.settings.fallback_fonts }};
+    }
+  {% endif %}
+{% endstyle %}
+
+<div class="ai-font-loader-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  {% if block.settings.show_preview %}
+    <div class="ai-font-loader-preview-{{ ai_gen_id }}">
+      <p class="ai-font-loader-preview-text-{{ ai_gen_id }}">
+        {% if block.settings.preview_text != blank %}
+          {{ block.settings.preview_text }}
+        {% else %}
+          The quick brown fox jumps over the lazy dog. ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "Custom font loader",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Font files"
+    },
+    {
+      "type": "paragraph",
+      "content": "Upload your custom font files. For best browser support, include WOFF2, WOFF, and TTF formats. WOFF2 is recommended for modern browsers."
+    },
+    {
+      "type": "url",
+      "id": "font_file_woff2",
+      "label": "WOFF2 font file URL"
+    },
+    {
+      "type": "url",
+      "id": "font_file_woff",
+      "label": "WOFF font file URL"
+    },
+    {
+      "type": "url",
+      "id": "font_file_ttf",
+      "label": "TTF font file URL"
+    },
+    {
+      "type": "header",
+      "content": "Font configuration"
+    },
+    {
+      "type": "text",
+      "id": "font_family_name",
+      "label": "Font family name",
+      "default": "CustomFont"
+    },
+    {
+      "type": "select",
+      "id": "font_style",
+      "label": "Font style",
+      "options": [
+        {
+          "value": "normal",
+          "label": "Normal"
+        },
+        {
+          "value": "italic",
+          "label": "Italic"
+        },
+        {
+          "value": "oblique",
+          "label": "Oblique"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "select",
+      "id": "font_weight",
+      "label": "Font weight",
+      "options": [
+        {
+          "value": "100",
+          "label": "100 - Thin"
+        },
+        {
+          "value": "200",
+          "label": "200 - Extra Light"
+        },
+        {
+          "value": "300",
+          "label": "300 - Light"
+        },
+        {
+          "value": "400",
+          "label": "400 - Normal"
+        },
+        {
+          "value": "500",
+          "label": "500 - Medium"
+        },
+        {
+          "value": "600",
+          "label": "600 - Semi Bold"
+        },
+        {
+          "value": "700",
+          "label": "700 - Bold"
+        },
+        {
+          "value": "800",
+          "label": "800 - Extra Bold"
+        },
+        {
+          "value": "900",
+          "label": "900 - Black"
+        }
+      ],
+      "default": "400"
+    },
+    {
+      "type": "select",
+      "id": "font_display",
+      "label": "Font display",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Auto"
+        },
+        {
+          "value": "block",
+          "label": "Block"
+        },
+        {
+          "value": "swap",
+          "label": "Swap"
+        },
+        {
+          "value": "fallback",
+          "label": "Fallback"
+        },
+        {
+          "value": "optional",
+          "label": "Optional"
+        }
+      ],
+      "default": "swap"
+    },
+    {
+      "type": "text",
+      "id": "fallback_fonts",
+      "label": "Fallback fonts",
+      "default": "Arial, sans-serif"
+    },
+    {
+      "type": "header",
+      "content": "Preview"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_preview",
+      "label": "Show font preview",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "preview_text",
+      "label": "Preview text"
+    },
+    {
+      "type": "range",
+      "id": "preview_font_size",
+      "min": 12,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "label": "Preview font size",
+      "default": 24
+    },
+    {
+      "type": "color",
+      "id": "preview_text_color",
+      "label": "Preview text color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "preview_background_color",
+      "label": "Preview background color",
+      "default": "#f8f8f8"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom font loader"
+    }
+  ]
+}
+{% endschema %}

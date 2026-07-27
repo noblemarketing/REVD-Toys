@@ -1,0 +1,227 @@
+{% comment %}
+  Section: Product Hotspots on Image (multi)
+  - Add any number of hotspots via blocks.
+  - Each hotspot can link to a product and has its own desktop & mobile positions.
+  - Positions are percentages; section scales responsively with the image.
+{% endcomment %}
+
+<section class="hotspots-section" id="hotspots-{{ section.id }}">
+  <style>
+    #hotspots-{{ section.id }} .hotspots-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: {{ section.settings.max_width | default: 1400 }}px;
+      margin: 0 auto;
+      line-height: 0;
+    }
+    #hotspots-{{ section.id }} .hotspots-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Base hotspot styles */
+    #hotspots-{{ section.id }} .hotspot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: var(--size, 20px);
+      height: var(--size, 20px);
+      border-radius: 50%;
+      background: var(--color, #ff3b30);
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .2s ease;
+      top: var(--y, 50%);
+      left: var(--x, 50%);
+      box-shadow: 0 0 0 0 rgba(0,0,0,.15);
+    }
+    #hotspots-{{ section.id }} .hotspot:hover { transform: translate(-50%, -50%) scale(1.07); }
+
+    /* Pulse */
+    #hotspots-{{ section.id }} .hotspot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--color, #ff3b30);
+      animation: pulse-{{ section.id }} 2s infinite;
+      opacity: .7;
+      pointer-events: none;
+    }
+    @keyframes pulse-{{ section.id }} {
+      0% { transform: scale(1); opacity: .7; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    /* Label tooltip */
+    #hotspots-{{ section.id }} .hotspot-label {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.78);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    #hotspots-{{ section.id }} .hotspot:hover + .hotspot-label,
+    #hotspots-{{ section.id }} .hotspot:focus + .hotspot-label { opacity: 1; }
+
+    /* Mobile positions override */
+    @media (max-width: 767px) {
+      #hotspots-{{ section.id }} .hotspot {
+        top: var(--y-mobile, var(--y, 50%));
+        left: var(--x-mobile, var(--x, 50%));
+      }
+    }
+
+    /* “+” symbol */
+    #hotspots-{{ section.id }} .hotspot-symbol {
+      color: #fff;
+      font-size: 12px;
+      line-height: 1;
+      user-select: none;
+    }
+  </style>
+
+  <div class="hotspots-inner" style="padding: {{ section.settings.section_padding | default: 0 }}px 0;">
+    {% if section.settings.heading %}
+      <h2 style="text-align: {{ section.settings.alignment | default: 'center' }}">{{ section.settings.heading }}</h2>
+    {% endif %}
+
+    {% if section.settings.image != blank %}
+      <div class="hotspots-wrapper">
+        <img
+          src="{{ section.settings.image | image_url: width: 2200 }}"
+          alt="{{ section.settings.image.alt | default: section.settings.heading | escape }}"
+          loading="lazy"
+          width="{{ section.settings.image.width }}"
+          height="{{ section.settings.image.height }}"
+          sizes="(min-width: 1200px) 1200px, 100vw"
+          srcset="
+            {{ section.settings.image | image_url: width: 400 }} 400w,
+            {{ section.settings.image | image_url: width: 800 }} 800w,
+            {{ section.settings.image | image_url: width: 1200 }} 1200w,
+            {{ section.settings.image | image_url: width: 1600 }} 1600w,
+            {{ section.settings.image | image_url: width: 2000 }} 2000w,
+            {{ section.settings.image | image_url: width: 2200 }} 2200w
+          "
+        />
+
+        {% for block in section.blocks %}
+          {% case block.type %}
+          {% when 'hotspot' %}
+            {% assign prod = null %}
+            {% if block.settings.product != blank %}
+              {% assign prod = all_products[block.settings.product] %}
+            {% endif %}
+
+            {% if prod %}
+              <button
+                {{ block.shopify_attributes }}
+                class="hotspot"
+                type="button"
+                aria-label="{{ block.settings.aria_label | default: 'View product' | escape }}"
+                data-url="{{ prod.url }}"
+                style="
+                  --x: {{ block.settings.desktop_x | default: 50 }}%;
+                  --y: {{ block.settings.desktop_y | default: 50 }}%;
+                  --x-mobile: {{ block.settings.mobile_x | default: block.settings.desktop_x | default: 50 }}%;
+                  --y-mobile: {{ block.settings.mobile_y | default: block.settings.desktop_y | default: 50 }}%;
+                  --size: {{ block.settings.size | default: 20 }}px;
+                  --color: {{ block.settings.color | default: '#ff3b30' }};
+                "
+              >
+                <span class="hotspot-symbol">+</span>
+              </button>
+
+              {% if block.settings.label != blank %}
+                <div class="hotspot-label">{{ block.settings.label | escape }}</div>
+              {% endif %}
+            {% endif %}
+          {% endcase %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="text-align:center;">Add an image in the section settings.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    (function() {
+      var root = document.getElementById('hotspots-{{ section.id }}');
+      if (!root) return;
+      var hotspots = root.querySelectorAll('.hotspot');
+      if (!hotspots.length) return;
+
+      hotspots.forEach(function(hs) {
+        hs.addEventListener('click', function() {
+          var url = hs.getAttribute('data-url');
+          if (url) window.location.href = url;
+        });
+        hs.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var url = hs.getAttribute('data-url');
+            if (url) window.location.href = url;
+          }
+        });
+      });
+    })();
+  </script>
+</section>
+
+{% schema %}
+{
+  "name": "Product Hotspots on Image",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Product highlights" },
+    { "type": "image_picker", "id": "image", "label": "Background image" },
+    { "type": "number", "id": "max_width", "label": "Max image width (px)", "default": 1400 },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Heading alignment",
+      "default": "center",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ]
+    },
+    { "type": "range", "id": "section_padding", "label": "Vertical padding (px)", "min": 0, "max": 120, "step": 4, "default": 0 }
+  ],
+  "blocks": [
+    {
+      "type": "hotspot",
+      "name": "Hotspot",
+      "settings": [
+        { "type": "product", "id": "product", "label": "Linked product" },
+        { "type": "text", "id": "label", "label": "Tooltip label", "default": "View product" },
+        { "type": "text", "id": "aria_label", "label": "ARIA label", "default": "View product" },
+
+        { "type": "range", "id": "desktop_x", "label": "Desktop X (%)", "min": 0, "max": 100, "step": 1, "default": 50 },
+        { "type": "range", "id": "desktop_y", "label": "Desktop Y (%)", "min": 0, "max": 100, "step": 1, "default": 50 },
+
+        { "type": "range", "id": "mobile_x", "label": "Mobile X (%)", "min": 0, "max": 100, "step": 1, "default": 50 },
+        { "type": "range", "id": "mobile_y", "label": "Mobile Y (%)", "min": 0, "max": 100, "step": 1, "default": 70 },
+
+        { "type": "range", "id": "size", "label": "Size (px)", "min": 10, "max": 36, "step": 1, "default": 20 },
+        { "type": "color", "id": "color", "label": "Color", "default": "#ff3b30" }
+      ]
+    }
+  ],
+  "max_blocks": 15,
+  "presets": [
+    { "name": "Product Hotspots on Image", "category": "Image" }
+  ]
+}
+{% endschema %}

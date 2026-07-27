@@ -1,0 +1,13 @@
+@font-face { font-family: Rufner; src: url('https://cdn.shopify.com/s/files/1/0707/9677/1477/files/Rufner.otf?v=1754580521'); } 
+.facet-filters__sort select,
+.collection-filters__sort select {
+  background-color: white;
+  color: black;
+}
+
+.facet-filters__sort select:hover,
+.facet-filters__sort select:focus,
+.collection-filters__sort select:hover,
+.collection-filters__sort select:focus {
+  color: red;
+}

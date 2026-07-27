@@ -1,0 +1,77 @@
+{% comment %}
+  Collage Hotspots — grid of images with up to 5 clickable product hotspots per image.
+  OS 2.0 compatible. Uses 0–100 sliders for positions.
+{% endcomment %}
+
+<section id="collage-{{ section.id }}" class="ch-wrap" style="--cols: {{ section.settings.columns }}; --gap: {{ section.settings.gap }}px;">
+  <div class="ch-grid">
+    {% for block in section.blocks %}
+      {% if block.type == 'card' %}
+        {% assign card = block.settings %}
+        <figure class="ch-card ch-card--{{ card.size | default: 'm' }}" {{ block.shopify_attributes }}>
+          <div class="ch-media" style="aspect-ratio: {{ card.aspect_ratio | default: '4 / 3' }};">
+            {% assign alt_text = card.image_alt | default: card.image.alt | default: shop.name %}
+            {% capture img_classes %}ch-img{% if section.settings.enable_zoom %} ch-img--zoom{% endif %}{% endcapture %}
+
+            {% if card.image != blank %}
+              {{ card.image
+                | image_url: width: 1440
+                | image_tag:
+                    alt: alt_text,
+                    loading: 'lazy',
+                    class: img_classes,
+                    widths: '480,720,980,1440',
+                    sizes: '(min-width: 990px) 33vw, 100vw'
+              }}
+            {% else %}
+              <div class="ch-ph">{{ 'image' | placeholder_svg_tag }}</div>
+            {% endif %}
+
+            {% for i in (1..5) %}
+              {% assign enable_key = 'hotspot_' | append: i | append: '_enable' %}
+              {% assign x_key      = 'hotspot_' | append: i | append: '_x' %}
+              {% assign y_key      = 'hotspot_' | append: i | append: '_y' %}
+              {% assign prod_key   = 'hotspot_' | append: i | append: '_product' %}
+              {% assign label_key  = 'hotspot_' | append: i | append: '_label' %}
+
+              {% if card[enable_key] and card[prod_key] %}
+                {% assign hs_x = card[x_key] | default: 50 %}
+                {% assign hs_y = card[y_key] | default: 50 %}
+                {% assign hs_product = card[prod_key] %}
+                {% assign hs_label = card[label_key] | default: hs_product.title %}
+                {% assign v = hs_product.selected_or_first_available_variant %}
+
+                <a href="{{ hs_product.url }}" class="ch-hotspot" style="left: {{ hs_x }}%; top: {{ hs_y }}%;" aria-label="{{ hs_label | escape }}">
+                  <span class="ch-dot" aria-hidden="true"></span>
+                  <span class="ch-pop">
+                    <strong class="ch-t">{{ hs_label }}</strong>
+                    <span class="ch-p">
+                      {% if v.compare_at_price > v.price %}<s>{{ v.compare_at_price | money }}</s>{% endif %}
+                      {{ v.price | money }}
+                    </span>
+                    <span class="ch-cta">View product</span>
+                  </span>
+                </a>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          {% if card.caption != blank %}
+            <figcaption class="ch-cap">{{ card.caption }}</figcaption>
+          {% endif %}
+        </figure>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <style>
+    #collage-{{ section.id }}{--dot:16px;--dot-ring:2px;--pop-pad:.625rem;}
+    #collage-{{ section.id }} .ch-grid{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:var(--gap);align-items:start;}
+    #collage-{{ section.id }} .ch-card{position:relative;}
+    #collage-{{ section.id }} .ch-card--l{grid-column:span 2;}
+    @media (max-width:990px){#collage-{{ section.id }} .ch-grid{grid-template-columns:1fr 1fr;}#collage-{{ section.id }} .ch-card--l{grid-column:span 2;}}
+    @media (max-width:640px){#collage-{{ section.id }} .ch-grid{grid-template-columns:1fr;}#collage-{{ section.id }} .ch-card--l{grid-column:span 1;}}
+    #collage-{{ section.id }} .ch-media{position:relative;width:100%;overflow:hidden;min-height:40px;border-radius:12px;background:transparent;}
+    #collage-{{ section.id }} .ch-img{width:100%;height:100%;display:block;object-fit:cover;transform:translateZ(0);transition:transform .35s ease;}
+    #collage-{{ section.id }} .ch-img--zoom:hover{transform:scale(1.03);}
+    #collage-{{ section.id }} .ch-hotspot{position:absolute;transform:translate(-50%,-50%);text-decoration:none;
