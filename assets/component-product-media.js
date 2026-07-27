@@ -18678,7 +18678,6 @@ if (!customElements.get('product-media')) {
       this.mainMediaId = this.getAttribute('id');
       this.mediaType = this.getAttribute('data-media-type');
       this.thumbnails = this.querySelector('[data-media-thumbnails]');
-      this.thumbnailsNext = this.querySelector('[data-thumbnails-next]');
       this.thumbnailPosition = this.getAttribute('data-thumbnail-position');
       this.imageSize = this.getAttribute('data-image-size');
       this.device = this.getAttribute('data-device');
@@ -18694,14 +18693,20 @@ if (!customElements.get('product-media')) {
       this.mediaCount = this.dataset.mediaCount;
       this.changeVariantBasedOnThumbnail = this.dataset.changeVariantBasedOnThumbnail;
       this.autoplayEnabled = this.dataset.autoplayEnabled;
+      this.moreMediaLabel = this.getAttribute('data-more-media-label') || '+__COUNT__';
+      this.moreMediaAria = this.getAttribute('data-more-media-aria') || 'View __COUNT__ more images';
       this.isDrawerOpen = false;
+      this.moreCountClickBound = false;
 
+      // Use whole thumbnails so the strip matches a clean row (no partial peek/fade)
       if (this.imageSize === 'small') {
-        this.thumbnailsPerView = 5.5;
+        this.thumbnailsPerView = 5;
       } else if (this.imageSize === 'medium') {
-        this.thumbnailsPerView = 6.5;
+        this.thumbnailsPerView = 6;
       } else if (this.imageSize === 'large') {
-        this.thumbnailsPerView = 7.5;
+        this.thumbnailsPerView = 7;
+      } else {
+        this.thumbnailsPerView = 6;
       }
 
       this.slidesPerViewVertical = 'auto';
@@ -18927,7 +18932,7 @@ if (!customElements.get('product-media')) {
         allowTouchMove: true,
         watchOverflow: true,
         direction: this.thumbnailPosition === 'below' ? 'horizontal' : 'vertical',
-        slidesPerView: this.thumbnailPosition === 'below' ? 4.35 : this.slidesPerViewVertical,
+        slidesPerView: this.thumbnailPosition === 'below' ? 4 : this.slidesPerViewVertical,
         freeMode: true, // Enable freeMode for a natural scroll effect
         breakpoints: {
           768: {
@@ -18948,7 +18953,6 @@ if (!customElements.get('product-media')) {
                 slide.style.visibility = 'visible';
               });
 
-              this.bindThumbnailsNextButton();
               this.handleThumbnailsScrollState();
     
               // Custom scroll handler
@@ -19071,15 +19075,6 @@ if (!customElements.get('product-media')) {
       this.handleThumbnailsScrollState();
     }    
 
-    bindThumbnailsNextButton() {
-      if (!this.thumbnailsNext || this.thumbnailPosition !== 'below') return;
-
-      this.thumbnailsNext.addEventListener('click', (event) => {
-        event.preventDefault();
-        this.scrollThumbnailsNext();
-      });
-    }
-
     scrollThumbnailsNext() {
       if (!this.thumbnailSwiper || this.thumbnailPosition !== 'below') return;
 
@@ -19087,8 +19082,11 @@ if (!customElements.get('product-media')) {
       const activeSlide = this.thumbnailSwiper.slides[this.thumbnailSwiper.activeIndex] || this.thumbnailSwiper.slides[0];
       const slideWidth = activeSlide ? activeSlide.offsetWidth : 70;
       const spaceBetween = this.thumbnailSwiper.params.spaceBetween || 0;
-      // Scroll by roughly two thumbnails so each click reveals more of the strip
-      const scrollAmount = (slideWidth + spaceBetween) * 2;
+      const slidesPerView = typeof this.thumbnailSwiper.params.slidesPerView === 'number'
+        ? Math.max(1, Math.floor(this.thumbnailSwiper.params.slidesPerView))
+        : 4;
+      // Advance by roughly one full page of thumbnails
+      const scrollAmount = (slideWidth + spaceBetween) * slidesPerView;
       const newTranslate = Math.max(this.thumbnailSwiper.translate - scrollAmount, minTranslate);
 
       if (typeof this.thumbnailSwiper.translateTo === 'function') {
@@ -19100,9 +19098,28 @@ if (!customElements.get('product-media')) {
       this.handleThumbnailsScrollState();
     }
 
+    getMoreCountLabel(count) {
+      return String(this.moreMediaLabel).replace('__COUNT__', String(count));
+    }
+
+    getMoreCountAria(count) {
+      return String(this.moreMediaAria).replace('__COUNT__', String(count));
+    }
+
+    clearThumbnailMoreBadge() {
+      if (!this.thumbnails) return;
+      this.thumbnails.querySelectorAll('.thumbnail-media--more-count').forEach((badge) => badge.remove());
+      this.thumbnails.querySelectorAll('.swiper-slide.has-more-count').forEach((slide) => {
+        slide.classList.remove('has-more-count');
+      });
+    }
+
     handleThumbnailsScrollState() {
-      /* ==== Show/hide the thumbnail scroll arrow based on remaining overflow ==== */
+      /* ==== Show +N overlay on the last visible thumbnail when more images remain ==== */
       if (!this.thumbnailSwiper || this.mediaType !== 'thumbnails' || this.thumbnailPosition !== 'below') return;
+
+      const slides = this.thumbnailSwiper.slides;
+      if (!slides || slides.length === 0) return;
 
       const { minTranslate } = this.calculateTranslationBoundaries();
       const currentTranslate = this.thumbnailSwiper.translate;
@@ -19110,9 +19127,51 @@ if (!customElements.get('product-media')) {
       const canScroll = minTranslate < -1;
       const endReached = !canScroll || cappedCurrentTranslate <= minTranslate + 1;
 
-      if (this.thumbnailsNext) {
-        this.thumbnailsNext.hidden = endReached;
+      this.clearThumbnailMoreBadge();
+
+      if (!canScroll || endReached) {
+        this.previousTranslate = cappedCurrentTranslate;
+        return;
       }
+
+      const containerRect = this.thumbnails.getBoundingClientRect();
+      let lastVisibleIndex = -1;
+
+      slides.forEach((slide, index) => {
+        const rect = slide.getBoundingClientRect();
+        // Treat a slide as visible when most of it sits inside the strip
+        const visibleWidth = Math.min(rect.right, containerRect.right) - Math.max(rect.left, containerRect.left);
+        if (visibleWidth >= rect.width * 0.6) {
+          lastVisibleIndex = index;
+        }
+      });
+
+      if (lastVisibleIndex < 0) {
+        lastVisibleIndex = Math.min(slides.length - 1, Math.floor(this.thumbnailSwiper.params.slidesPerView || 1) - 1);
+      }
+
+      const remaining = slides.length - lastVisibleIndex;
+      if (remaining <= 1) {
+        this.previousTranslate = cappedCurrentTranslate;
+        return;
+      }
+
+      const targetSlide = slides[lastVisibleIndex];
+      if (!targetSlide) return;
+
+      const badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'thumbnail-media--more-count';
+      badge.textContent = this.getMoreCountLabel(remaining);
+      badge.setAttribute('aria-label', this.getMoreCountAria(remaining));
+      badge.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.scrollThumbnailsNext();
+      });
+
+      targetSlide.classList.add('has-more-count');
+      targetSlide.appendChild(badge);
 
       this.previousTranslate = cappedCurrentTranslate;
     }

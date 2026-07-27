@@ -157,6 +157,8 @@
   data-thumbnail-position="{{ thumbnail_position }}"
   data-media-type="{{ type }}"
   data-media-count="{% if onboarding and product.media.size == 0 %}3{% else %}{{ product.media.size }}{% endif %}"
+  data-more-media-label="{{ 'products.product.more_media_count' | t: count: '__COUNT__' }}"
+  data-more-media-aria="{{ 'products.product.view_more_media' | t: count: '__COUNT__' }}"
   data-autoplay-enabled="{% if enable_autoplay %}true{% else %}false{% endif %}"
   data-selected-variant="{{ product.selected_or_first_available_variant | json | escape }}"
   class="product-media-slider product-media-slider-{{ device }} thumbnails-{{ thumbnail_position }} media-type-{{ type }}{% if product.media.size == 1 or product.media.size == 0 and onboarding == false %} single-media{% endif %}"
@@ -390,15 +392,6 @@
             {% endfor %}
           </div>
         </div>
-        <button
-          type="button"
-          class="thumbnail-media--scroll-next"
-          data-thumbnails-next
-          aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
-          hidden
-        >
-          {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 24, iconHeight: 24, iconColor: 'currentColor' %}
-        </button>
       </div>
     {% endif %}
   {% elsif onboarding %}
@@ -467,15 +460,6 @@
             {% endfor %}
           </div>
         </div>
-        <button
-          type="button"
-          class="thumbnail-media--scroll-next"
-          data-thumbnails-next
-          aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
-          hidden
-        >
-          {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 24, iconHeight: 24, iconColor: 'currentColor' %}
-        </button>
       </div>
     {% endif %}    
   {% else %}
