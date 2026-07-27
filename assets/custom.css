@@ -58,6 +58,25 @@ product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-ne
   display: none;
 }
 
+/* Desktop: show thumbnail scroll arrow only on hover */
+@media screen and (min-width: 768px) {
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
+    opacity: 0;
+  }
+
+  @media screen and (prefers-reduced-motion: no-preference) {
+    product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
+      transition: opacity 0.2s ease-out;
+    }
+  }
+
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails:hover ~ .thumbnail-media--scroll-next:not([hidden]),
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next:not([hidden]):hover,
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next:focus-visible {
+    opacity: 1;
+  }
+}
+
 product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next:hover {
   opacity: 0.8;
 }
@@ -65,6 +84,7 @@ product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-ne
 product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next:focus-visible {
   outline: 2px solid var(--text-color);
   outline-offset: 2px;
+  opacity: 1;
 }
 
 product-media.media-type-thumbnails:not(.thumbnails-below) .thumbnail-media--scroll-next {
