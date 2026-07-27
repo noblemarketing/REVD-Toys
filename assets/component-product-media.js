@@ -18678,6 +18678,7 @@ if (!customElements.get('product-media')) {
       this.mainMediaId = this.getAttribute('id');
       this.mediaType = this.getAttribute('data-media-type');
       this.thumbnails = this.querySelector('[data-media-thumbnails]');
+      this.thumbnailsNext = this.querySelector('[data-thumbnails-next]');
       this.thumbnailPosition = this.getAttribute('data-thumbnail-position');
       this.imageSize = this.getAttribute('data-image-size');
       this.device = this.getAttribute('data-device');
@@ -18693,20 +18694,14 @@ if (!customElements.get('product-media')) {
       this.mediaCount = this.dataset.mediaCount;
       this.changeVariantBasedOnThumbnail = this.dataset.changeVariantBasedOnThumbnail;
       this.autoplayEnabled = this.dataset.autoplayEnabled;
-      this.moreMediaLabel = this.getAttribute('data-more-media-label') || '+__COUNT__';
-      this.moreMediaAria = this.getAttribute('data-more-media-aria') || 'View __COUNT__ more images';
       this.isDrawerOpen = false;
-      this.moreCountClickBound = false;
 
-      // Use whole thumbnails so the strip matches a clean row (no partial peek/fade)
       if (this.imageSize === 'small') {
-        this.thumbnailsPerView = 5;
+        this.thumbnailsPerView = 5.5;
       } else if (this.imageSize === 'medium') {
-        this.thumbnailsPerView = 6;
+        this.thumbnailsPerView = 6.5;
       } else if (this.imageSize === 'large') {
-        this.thumbnailsPerView = 7;
-      } else {
-        this.thumbnailsPerView = 6;
+        this.thumbnailsPerView = 7.5;
       }
 
       this.slidesPerViewVertical = 'auto';
@@ -18932,7 +18927,7 @@ if (!customElements.get('product-media')) {
         allowTouchMove: true,
         watchOverflow: true,
         direction: this.thumbnailPosition === 'below' ? 'horizontal' : 'vertical',
-        slidesPerView: this.thumbnailPosition === 'below' ? 4 : this.slidesPerViewVertical,
+        slidesPerView: this.thumbnailPosition === 'below' ? 4.35 : this.slidesPerViewVertical,
         freeMode: true, // Enable freeMode for a natural scroll effect
         breakpoints: {
           768: {
@@ -18953,7 +18948,8 @@ if (!customElements.get('product-media')) {
                 slide.style.visibility = 'visible';
               });
 
-              this.handleThumbnailsScrollState();
+              this.bindThumbnailsNextButton();
+              this.handleThumbnailsFade();
     
               // Custom scroll handler
               this.thumbnails.addEventListener('wheel', (e) => {
@@ -18978,6 +18974,8 @@ if (!customElements.get('product-media')) {
                   }
                 }
 
+                this.handleThumbnailsFade();
+    
                 const { maxTranslate, minTranslate } = this.calculateTranslationBoundaries();
     
                 // Constrain the newTranslate within the boundaries
@@ -18986,38 +18984,34 @@ if (!customElements.get('product-media')) {
     
                 this.thumbnailSwiper.setTranslate(newTranslate);
                 this.thumbnailSwiper.updateProgress();
-                this.handleThumbnailsScrollState();
+                //this.thumbnailSwiper.update(); // Ensure Swiper updates its state
               });
 
               // Touch event handling for mobile devices
               this.thumbnails.addEventListener('touchmove', () => {
-                this.handleThumbnailsScrollState();
+                this.handleThumbnailsFade();
               });
               
               this.thumbnails.addEventListener('touchend', () => {
-                this.handleThumbnailsScrollState();
+                this.handleThumbnailsFade();
               });
               
               // Handle slider dragging event with pointer events (works across devices)
               this.thumbnails.addEventListener('pointerdown', () => {
                 const handlePointerMove = () => {
-                  this.handleThumbnailsScrollState();
+                  this.handleThumbnailsFade();
                 };
                 
                 document.addEventListener('pointermove', handlePointerMove);
                 
                 document.addEventListener('pointerup', () => {
                   document.removeEventListener('pointermove', handlePointerMove);
-                  this.handleThumbnailsScrollState();
                 }, { once: true });
               });
             }
           },
           slideChange: () => {
-            this.handleThumbnailsScrollState();
-          },
-          setTranslate: () => {
-            this.handleThumbnailsScrollState();
+            this.handleThumbnailsFade();
           }
         }
       });
@@ -19072,8 +19066,17 @@ if (!customElements.get('product-media')) {
         this.thumbnails?.classList.remove('swiper-center-slides');
       }
 
-      this.handleThumbnailsScrollState();
+      this.handleThumbnailsFade(true);
     }    
+
+    bindThumbnailsNextButton() {
+      if (!this.thumbnailsNext || this.thumbnailPosition !== 'below' || this.thumbnailsNextBound) return;
+      this.thumbnailsNextBound = true;
+      this.thumbnailsNext.addEventListener('click', (event) => {
+        event.preventDefault();
+        this.scrollThumbnailsNext();
+      });
+    }
 
     scrollThumbnailsNext() {
       if (!this.thumbnailSwiper || this.thumbnailPosition !== 'below') return;
@@ -19082,11 +19085,7 @@ if (!customElements.get('product-media')) {
       const activeSlide = this.thumbnailSwiper.slides[this.thumbnailSwiper.activeIndex] || this.thumbnailSwiper.slides[0];
       const slideWidth = activeSlide ? activeSlide.offsetWidth : 70;
       const spaceBetween = this.thumbnailSwiper.params.spaceBetween || 0;
-      const slidesPerView = typeof this.thumbnailSwiper.params.slidesPerView === 'number'
-        ? Math.max(1, Math.floor(this.thumbnailSwiper.params.slidesPerView))
-        : 4;
-      // Advance by roughly one full page of thumbnails
-      const scrollAmount = (slideWidth + spaceBetween) * slidesPerView;
+      const scrollAmount = (slideWidth + spaceBetween) * 2;
       const newTranslate = Math.max(this.thumbnailSwiper.translate - scrollAmount, minTranslate);
 
       if (typeof this.thumbnailSwiper.translateTo === 'function') {
@@ -19095,83 +19094,39 @@ if (!customElements.get('product-media')) {
         this.thumbnailSwiper.setTranslate(newTranslate);
         this.thumbnailSwiper.updateProgress();
       }
-      this.handleThumbnailsScrollState();
+      this.handleThumbnailsFade(true);
     }
 
-    getMoreCountLabel(count) {
-      return String(this.moreMediaLabel).replace('__COUNT__', String(count));
-    }
-
-    getMoreCountAria(count) {
-      return String(this.moreMediaAria).replace('__COUNT__', String(count));
-    }
-
-    clearThumbnailMoreBadge() {
-      if (!this.thumbnails) return;
-      this.thumbnails.querySelectorAll('.thumbnail-media--more-count').forEach((badge) => badge.remove());
-      this.thumbnails.querySelectorAll('.swiper-slide.has-more-count').forEach((slide) => {
-        slide.classList.remove('has-more-count');
-      });
-    }
-
-    handleThumbnailsScrollState() {
-      /* ==== Show +N overlay on the last visible thumbnail when more images remain ==== */
+    handleThumbnailsFade(force = false) {
+      /* ==== Update overflow classes and scroll arrow for the thumbnail strip ==== */
       if (!this.thumbnailSwiper || this.mediaType !== 'thumbnails' || this.thumbnailPosition !== 'below') return;
 
-      const slides = this.thumbnailSwiper.slides;
-      if (!slides || slides.length === 0) return;
+      const currentTranslate = this.thumbnailSwiper.translate;
+      if (!force && currentTranslate === this.previousTranslate) return; // if the translate hasn't changed, do nothing
 
       const { minTranslate } = this.calculateTranslationBoundaries();
-      const currentTranslate = this.thumbnailSwiper.translate;
-      const cappedCurrentTranslate = Math.min(Math.max(currentTranslate, minTranslate), 0);
+
+      const cappedCurrentTranslate = Math.min(Math.max(currentTranslate, minTranslate), 0); // cap between minTranslate and 0
       const canScroll = minTranslate < -1;
       const endReached = !canScroll || cappedCurrentTranslate <= minTranslate + 1;
 
-      this.clearThumbnailMoreBadge();
-
-      if (!canScroll || endReached) {
-        this.previousTranslate = cappedCurrentTranslate;
-        return;
+      // if the current translate is not 0 (i.e. has moved from start position), add the is-translated class
+      if (cappedCurrentTranslate !== 0) {
+        this.thumbnails.classList.add('is-translated');
+      } else {
+        this.thumbnails.classList.remove('is-translated');
       }
 
-      const containerRect = this.thumbnails.getBoundingClientRect();
-      let lastVisibleIndex = -1;
-
-      slides.forEach((slide, index) => {
-        const rect = slide.getBoundingClientRect();
-        // Treat a slide as visible when most of it sits inside the strip
-        const visibleWidth = Math.min(rect.right, containerRect.right) - Math.max(rect.left, containerRect.left);
-        if (visibleWidth >= rect.width * 0.6) {
-          lastVisibleIndex = index;
-        }
-      });
-
-      if (lastVisibleIndex < 0) {
-        lastVisibleIndex = Math.min(slides.length - 1, Math.floor(this.thumbnailSwiper.params.slidesPerView || 1) - 1);
+      // if the current translate is at the minTranslate (ie the end of the swiper), add the end-reached class
+      if (endReached) {
+        this.thumbnails.classList.add('end-reached');
+      } else {
+        this.thumbnails.classList.remove('end-reached');
       }
 
-      const remaining = slides.length - lastVisibleIndex;
-      if (remaining <= 1) {
-        this.previousTranslate = cappedCurrentTranslate;
-        return;
+      if (this.thumbnailsNext) {
+        this.thumbnailsNext.hidden = endReached;
       }
-
-      const targetSlide = slides[lastVisibleIndex];
-      if (!targetSlide) return;
-
-      const badge = document.createElement('button');
-      badge.type = 'button';
-      badge.className = 'thumbnail-media--more-count';
-      badge.textContent = this.getMoreCountLabel(remaining);
-      badge.setAttribute('aria-label', this.getMoreCountAria(remaining));
-      badge.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        this.scrollThumbnailsNext();
-      });
-
-      targetSlide.classList.add('has-more-count');
-      targetSlide.appendChild(badge);
 
       this.previousTranslate = cappedCurrentTranslate;
     }
