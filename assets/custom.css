@@ -71,3 +71,19 @@ product-media.media-type-thumbnails:not(.thumbnails-below) .thumbnail-media--scr
   display: none;
 }
 
+
+
+/* Mobile: full-width main image with thumbnails underneath */
+@media screen and (max-width: 767px) {
+  product-media.product-media-slider-mobile.media-type-thumbnails.thumbnails-below {
+    width: 100%;
+  }
+
+  product-media.product-media-slider-mobile.media-type-thumbnails.thumbnails-below .thumbnail-media--main-media {
+    width: 100%;
+  }
+
+  product-media.product-media-slider-mobile.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails {
+    padding-right: 36px;
+  }
+}
