@@ -31,14 +31,10 @@ product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnail
   content: none !important;
 }
 
-product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails {
-  padding-right: 40px;
-}
-
 product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
   position: absolute;
+  top: 50%;
   right: 0;
-  bottom: 0;
   z-index: 12;
   display: inline-flex;
   align-items: center;
@@ -48,6 +44,7 @@ product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-ne
   margin: 0;
   padding: 0;
   border: 0;
+  transform: translateY(-50%);
   cursor: pointer;
   color: var(--text-color);
   background-color: var(--body-color);
@@ -71,9 +68,31 @@ product-media.media-type-thumbnails:not(.thumbnails-below) .thumbnail-media--scr
   display: none;
 }
 
+/* Desktop: show scroll arrow on the last visible preview image on hover */
+@media screen and (min-width: 768px) {
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
+    opacity: 0;
+    pointer-events: none;
+  }
 
+  @media (prefers-reduced-motion: no-preference) {
+    product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
+      transition: opacity 0.2s ease-out;
+    }
+  }
 
-/* Mobile: full-width main image with thumbnails underneath */
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails:hover .thumbnail-media--scroll-next,
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails:hover .thumbnail-media--scroll-next:hover {
+    opacity: 0.8;
+  }
+}
+
+/* Mobile: full-width main image with thumbnails underneath; arrow always visible on last preview */
 @media screen and (max-width: 767px) {
   product-media.product-media-slider-mobile.media-type-thumbnails.thumbnails-below {
     width: 100%;
@@ -83,7 +102,8 @@ product-media.media-type-thumbnails:not(.thumbnails-below) .thumbnail-media--scr
     width: 100%;
   }
 
-  product-media.product-media-slider-mobile.media-type-thumbnails.thumbnails-below .thumbnail-media--thumbnails {
-    padding-right: 36px;
+  product-media.media-type-thumbnails.thumbnails-below .thumbnail-media--scroll-next {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

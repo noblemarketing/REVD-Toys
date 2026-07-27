@@ -388,18 +388,18 @@
             {% endunless %}
           {% endfor %}
         </div>
+        {% if thumbnail_position == 'below' %}
+          <button
+            type="button"
+            class="thumbnail-media--scroll-next"
+            data-thumbnails-next
+            aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
+            hidden
+          >
+            {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 20, iconHeight: 20, iconColor: 'currentColor' %}
+          </button>
+        {% endif %}
       </div>
-      {% if thumbnail_position == 'below' %}
-        <button
-          type="button"
-          class="thumbnail-media--scroll-next"
-          data-thumbnails-next
-          aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
-          hidden
-        >
-          {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 20, iconHeight: 20, iconColor: 'currentColor' %}
-        </button>
-      {% endif %}
     {% endif %}
   {% elsif onboarding %}
     {% comment %} ==== MAIN SLIDER ==== {% endcomment %}
@@ -465,18 +465,18 @@
             </div>
           {% endfor %}
         </div>
+        {% if thumbnail_position == 'below' %}
+          <button
+            type="button"
+            class="thumbnail-media--scroll-next"
+            data-thumbnails-next
+            aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
+            hidden
+          >
+            {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 20, iconHeight: 20, iconColor: 'currentColor' %}
+          </button>
+        {% endif %}
       </div>
-      {% if thumbnail_position == 'below' %}
-        <button
-          type="button"
-          class="thumbnail-media--scroll-next"
-          data-thumbnails-next
-          aria-label="{{ 'products.product.scroll_thumbnails' | t }}"
-          hidden
-        >
-          {% render 'theme-icon' with icon: 'chevron_right', iconWidth: 20, iconHeight: 20, iconColor: 'currentColor' %}
-        </button>
-      {% endif %}
     {% endif %}    
   {% else %}
     {% comment %} ==== BADGES ==== {% endcomment %}
